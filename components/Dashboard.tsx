@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { BookOpen, Award, CheckCircle, Clock, Sparkles, TrendingUp } from 'lucide-react';
+import { BookOpen, Award, CheckCircle, Clock, Sparkles, TrendingUp, Unlink, Link as LinkIcon, AlertTriangle } from 'lucide-react';
 
 const data = [
   { name: 'Teaching Apt.', progress: 75, color: '#6366f1' },
@@ -12,6 +12,25 @@ const data = [
 ];
 
 const Dashboard: React.FC = () => {
+  const [hasKey, setHasKey] = useState(true);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio?.hasSelectedApiKey) {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasKey(selected);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleConnect = async () => {
+    if (window.aistudio?.openSelectKey) {
+      await window.aistudio.openSelectKey();
+      setHasKey(true);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -19,13 +38,33 @@ const Dashboard: React.FC = () => {
           <h1 className="text-4xl font-bold serif-heading text-slate-800">Welcome, Professor!</h1>
           <p className="text-slate-500 mt-1">Your JET 2025 prep is at 62% efficiency today.</p>
         </div>
-        <div className="flex gap-3">
-          <div className="bg-indigo-600 text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold shadow-lg shadow-indigo-100 transition-transform hover:scale-105 cursor-default">
-            <Sparkles size={18} />
-            <span>AI Advantage Active</span>
-          </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {!hasKey ? (
+            <button 
+              onClick={handleConnect}
+              className="bg-rose-50 text-rose-600 px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold border border-rose-100 shadow-sm hover:bg-rose-100 transition-colors"
+            >
+              <Unlink size={18} />
+              <span>Connect AI Professor</span>
+            </button>
+          ) : (
+            <div className="bg-indigo-600 text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold shadow-lg shadow-indigo-100 transition-transform hover:scale-105 cursor-default">
+              <Sparkles size={18} />
+              <span>AI Advantage Active</span>
+            </div>
+          )}
         </div>
       </header>
+
+      {!hasKey && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2 duration-500">
+          <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+          <div>
+            <p className="text-sm font-bold text-amber-800">AI Features Restricted</p>
+            <p className="text-xs text-amber-700">Please connect your API key to use the AI Tutor and generate master notes. Syllabus topics are still available offline.</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {[

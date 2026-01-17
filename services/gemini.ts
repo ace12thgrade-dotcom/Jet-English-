@@ -1,17 +1,20 @@
 
 import { GoogleGenAI, Modality } from "@google/genai";
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
 // Audio Utilities for PCM processing
 export function decodeBase64(base64: string) {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  try {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  } catch (e) {
+    console.error("Base64 decoding failed", e);
+    return new Uint8Array(0);
   }
-  return bytes;
 }
 
 export async function decodeAudioData(
@@ -34,12 +37,13 @@ export async function decodeAudioData(
 }
 
 export const askTutor = async (prompt: string, context?: string) => {
-  const ai = getAI();
-  const systemInstruction = `You are a world-class JET (Joint Entrance Test) Tutor. 
+  // Create fresh instance per call as per best practices for Gemini 3
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const systemInstruction = `You are a world-class JET (Joint Entrance Test) Tutor for English Honours. 
   Explain things in "Hinglish" (Mix of Hindi and English). 
   Use English for technical terms (e.g., "Post-structuralism", "Teaching Aptitude") but explain them in simple Hindi sentences. 
   Example: "Derrida ka deconstruction theory humein batata hai ki text ka koi fixed meaning nahi hota."
-  Keep responses formatted in clear Markdown. Ensure you provide full, detailed explanations without cutting off.`;
+  Keep responses formatted in clear Markdown. Provide full, detailed explanations. If a topic is complex, break it down.`;
 
   const fullPrompt = context 
     ? `Context: ${context}\n\nUser Question: ${prompt}`
@@ -52,26 +56,27 @@ export const askTutor = async (prompt: string, context?: string) => {
       config: {
         systemInstruction,
         temperature: 0.7,
-        maxOutputTokens: 4096, // Ensure long responses aren't truncated
       },
     });
-    return response.text || "Kuch error aa gaya hai. Phir se try karein.";
-  } catch (error) {
+    return response.text || "I'm sorry, I couldn't generate a response. Please try again.";
+  } catch (error: any) {
     console.error("AI Tutor Error:", error);
-    return "AI Tutor abhi available nahi hai. Connection check karein.";
+    if (error.message?.includes("not found") || error.message?.includes("key")) {
+      return "CONNECTION_ERROR: Please click the 'Fix Connection' button at the top.";
+    }
+    return "API Connection Error: Please check your internet or try a shorter question.";
   }
 };
 
 export const generateNotes = async (topic: string) => {
-  const ai = getAI();
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `Topic: "${topic}" par JET 2025 ke liye detailed Hinglish study notes banayein. 
   Technical terms English mein honge (like authors, movements, theories) par explanations Hindi mein honi chahiye taaki student easily samajh sake. 
   Include: 
   1. Main Summary (Hinglish mein)
   2. Key Points (Bulleted)
   3. Important Authors/Works
-  4. JET 2025 Exam Tips.
-  Provide a complete and comprehensive analysis.`;
+  4. JET 2025 Exam Tips.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -79,25 +84,26 @@ export const generateNotes = async (topic: string) => {
       contents: prompt,
       config: {
         systemInstruction: "You are a senior professor specialized in JET exam prep for English Honours. You speak perfect Hinglish.",
-        maxOutputTokens: 4096, // Increase to prevent truncation
       },
     });
-    return response.text || "Notes generate nahi ho paye.";
-  } catch (error) {
-    return "Error generating AI notes.";
+    return response.text || "Notes could not be generated at this time.";
+  } catch (error: any) {
+    console.error("Notes Generation Error:", error);
+    if (error.message?.includes("not found") || error.message?.includes("key")) {
+      throw new Error("KEY_NOT_FOUND");
+    }
+    throw new Error("Failed to connect to AI server. Please retry.");
   }
 };
 
 export const generateSpeech = async (text: string) => {
-  const ai = getAI();
-  // Limit to a generous 5000 chars per chunk for the TTS model. 
-  // For even longer notes, the UI component will handle chunking.
-  const limitedText = text.slice(0, 5000);
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const limitedText = text.replace(/[*#]/g, '').slice(0, 1500);
   
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Is content ko bahut hi natural Hinglish voice mein samjhayein. Technical terms English mein bole par context Hindi mein samjhayein: ${limitedText}` }] }],
+      contents: [{ parts: [{ text: `Is content ko natural Hinglish teacher voice mein samjhayein: ${limitedText}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {

@@ -5,7 +5,7 @@ import NotesView from './components/NotesView';
 import QuizView from './components/QuizView';
 import AITutor from './components/AITutor';
 import ImportantQuestions from './components/ImportantQuestions';
-import { LayoutDashboard, BookText, ClipboardList, MessageSquare, Menu, X, BrainCircuit, Lightbulb } from 'lucide-react';
+import { LayoutDashboard, BookText, ClipboardList, MessageSquare, Menu, X, BrainCircuit, Lightbulb, Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'notes' | 'quiz' | 'tutor' | 'important'>('dashboard');
@@ -86,18 +86,18 @@ const App: React.FC = () => {
 
         <div className="p-6 mt-auto">
           <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200">
-            <h4 className="font-bold mb-2">Crack JET 2025</h4>
-            <p className="text-xs text-indigo-100 mb-4 opacity-90">Exclusive study notes and AI support for English Hons candidates.</p>
+            <h4 className="font-bold mb-2 flex items-center gap-2"><Sparkles size={16}/> SARA AI Active</h4>
+            <p className="text-xs text-indigo-100 mb-4 opacity-90">Ready to explain complex theories in simple Hinglish.</p>
             <div className="w-full bg-indigo-400/30 h-1.5 rounded-full overflow-hidden">
               <div className="h-full bg-white w-2/3"></div>
             </div>
-            <p className="text-[10px] mt-2 font-bold uppercase tracking-wider">Exam Status: 142 Days Left</p>
+            <p className="text-[10px] mt-2 font-bold uppercase tracking-wider">JET Exam: June 2025</p>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto h-screen scroll-smooth">
+      <main className="flex-1 p-4 md:p-12 overflow-y-auto h-screen scroll-smooth bg-slate-50/50">
         <div className="max-w-6xl mx-auto">
           {renderContent()}
         </div>
