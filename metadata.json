@@ -1,0 +1,7 @@
+{
+  "name": "JET 2025 Mastery",
+  "description": "A comprehensive study suite for English Honours students preparing for the JET 2025 exam, featuring Paper 1 (General) and Paper 2 (English Literature) content, mock tests, and an AI literary tutor.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
