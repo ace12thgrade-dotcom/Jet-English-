@@ -37,13 +37,10 @@ export async function decodeAudioData(
 }
 
 export const askTutor = async (prompt: string, context?: string) => {
-  // Create fresh instance per call as per best practices for Gemini 3
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const systemInstruction = `You are a world-class JET (Joint Entrance Test) Tutor for English Honours. 
-  Explain things in "Hinglish" (Mix of Hindi and English). 
-  Use English for technical terms (e.g., "Post-structuralism", "Teaching Aptitude") but explain them in simple Hindi sentences. 
-  Example: "Derrida ka deconstruction theory humein batata hai ki text ka koi fixed meaning nahi hota."
-  Keep responses formatted in clear Markdown. Provide full, detailed explanations. If a topic is complex, break it down.`;
+  Explain things in "Hinglish". Use English for technical terms. 
+  Keep responses formatted in Markdown.`;
 
   const fullPrompt = context 
     ? `Context: ${context}\n\nUser Question: ${prompt}`
@@ -53,46 +50,53 @@ export const askTutor = async (prompt: string, context?: string) => {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: fullPrompt,
-      config: {
-        systemInstruction,
-        temperature: 0.7,
-      },
+      config: { systemInstruction, temperature: 0.7 },
     });
-    return response.text || "I'm sorry, I couldn't generate a response. Please try again.";
+    return response.text || "I'm sorry, I couldn't generate a response.";
   } catch (error: any) {
-    console.error("AI Tutor Error:", error);
-    if (error.message?.includes("not found") || error.message?.includes("key")) {
-      return "CONNECTION_ERROR: Please click the 'Fix Connection' button at the top.";
-    }
-    return "API Connection Error: Please check your internet or try a shorter question.";
+    return "CONNECTION_ERROR: Please check your API key.";
   }
 };
 
 export const generateNotes = async (topic: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `Topic: "${topic}" par JET 2025 ke liye detailed Hinglish study notes banayein. 
-  Technical terms English mein honge (like authors, movements, theories) par explanations Hindi mein honi chahiye taaki student easily samajh sake. 
-  Include: 
-  1. Main Summary (Hinglish mein)
-  2. Key Points (Bulleted)
-  3. Important Authors/Works
-  4. JET 2025 Exam Tips.`;
+  Technical terms English mein honge. Include Summary, Key Points, Authors, and Exam Tips.`;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        systemInstruction: "You are a senior professor specialized in JET exam prep for English Honours. You speak perfect Hinglish.",
+        systemInstruction: "You are a senior professor specialized in JET exam prep. You speak Hinglish.",
       },
     });
-    return response.text || "Notes could not be generated at this time.";
+    return response.text || "Notes could not be generated.";
   } catch (error: any) {
-    console.error("Notes Generation Error:", error);
-    if (error.message?.includes("not found") || error.message?.includes("key")) {
-      throw new Error("KEY_NOT_FOUND");
-    }
-    throw new Error("Failed to connect to AI server. Please retry.");
+    throw new Error("Failed to connect to AI server.");
+  }
+};
+
+export const generateQuickRevision = async (topic: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const prompt = `Topic: "${topic}" ke liye 7-10 "Bullet Points" mein ultra-quick revision content banayein.
+  Rules:
+  1. Language: Hinglish (mix of Hindi/English).
+  2. Format: Har point ek line ka hona chahiye.
+  3. Content: Sirf vahi points likhein jo exam mein direct poochhe ja sakte hain (Facts, Dates, Definitions).
+  4. Short & Sharp points only. No long paragraphs.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        systemInstruction: "You are an expert at creating exam cheat sheets for JET students. You provide concise, punchy facts in Hinglish.",
+      },
+    });
+    return response.text || "Revision points unavailable.";
+  } catch (error: any) {
+    throw new Error("AI Connection Error");
   }
 };
 
@@ -103,21 +107,16 @@ export const generateSpeech = async (text: string) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Is content ko natural Hinglish teacher voice mein samjhayein: ${limitedText}` }] }],
+      contents: [{ parts: [{ text: `Explain this briefly in Hinglish: ${limitedText}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Kore' }, 
-          },
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
         },
       },
     });
-
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    return base64Audio;
+    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   } catch (error) {
-    console.error("Speech Generation Error:", error);
     return null;
   }
 };
